@@ -180,20 +180,13 @@ function departmentDelete(){
             choices: departmentList
         }).then(function(answer){
             const deleteDep = departmentList.filter(depo => depo.value === answer.deleteDepartment);
+            console.log(deleteDep);
             var query = `delete from department where id = '${answer.deleteDepartment}'`;
             connection.query(query, function(err, res){
                 if(err) throw err;
                 console.log(`${deleteDep[0].name} has been removed to the Department Table.`)
                 startFunction();
             }) 
-        }).then(function (){
-            var query = 'select * from department';
-            connection.query(query, function(err, res){
-                if(err) throw err;
-                console.log('All Departments')
-                console.table(res);
-                startFunction();
-        })
         })
     })
 }
