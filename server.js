@@ -37,7 +37,9 @@ function startFunction(){
             'Add Department',
             'Delete Department',
             'Add Role',
+            'Delete Role',
             'Add Employee',
+            'Delete Employee'
 
         ]
     }).then(function(answer){
@@ -58,8 +60,12 @@ function startFunction(){
             departmentDelete();
         }else if (answer.choice === 'Add Role'){
             roleAdd();
+        }else if (answer.choice === 'Delete Role'){
+            roleDelete();
         }else if (answer.choice === 'Add Employee'){
             employeeAdd();
+        }else if (answer.choice === 'Delete Employee'){
+            employeeDelete();
         }
     })
 }
@@ -77,21 +83,17 @@ function viewAllEmployee(){
 };
 
 function viewByDepartment(){
+    connection.query('SELECT * FROM department', function (req, res){
     inquirer.prompt({
         name: 'department',
         type: 'list',
         message: 'What department would you like to view?',
-        choices: [
-            'Sales',
-            'Engineering',
-            'Finance',
-            'Legal'
-        ]
+        choices: res.map(choice => ({name: choice.name, value: choice.id}))
     }).then(function(answer){
-        console.log(answer.department);
+        console.log(`${answer.department}`);
         var query = `select employee.id, concat(employee.first_name, " ", employee.last_name) as FullName, department.name as department from employee
         left join role on employee.role_id = role.id left join department on role.department_id = department.id
-        where department.name = '${answer.department}'`;
+        where department.id = '${answer.department}'`;
         connection.query(query, function(err, res){
             if (err) throw err;
             console.log('All Employees');
@@ -99,6 +101,7 @@ function viewByDepartment(){
             startFunction();
         })
     })
+})
 }
 
 function viewByManager(){
@@ -172,7 +175,6 @@ function departmentDelete(){
                 value: department.id
             }
         })
-
         inquirer.prompt({
             name: 'deleteDepartment',
             type:'list',
@@ -189,4 +191,84 @@ function departmentDelete(){
             }) 
         })
     })
+}
+
+function roleAdd(){
+    connection.query('SELECT * FROM department', function (req, res){
+        inquirer.prompt([{
+            name: 'roleAdd',
+            type: 'input',
+            message: 'What is the name of the role you wish to add?'
+        },{
+            name: 'roleSalary',
+            type: 'input',
+            message: 'How much should this position make?'
+        },{
+            message: 'What department should this role be added too?',
+            name: 'roleId',
+            type: 'list',
+            choices: res.map(choice => ({name: choice.name, value: choice.id}))
+        }]).then(function(answer){
+            connection.query(`insert into role (title, salary, department_id) values ('${answer.roleAdd}', ${answer.roleSalary}, ${answer.roleId})`, function (err, res){
+                if(err) throw err;
+            console.log(`${answer.roleAdd} has been added to the Role Table.`);
+            startFunction();
+        })
+    })
+    })
+}
+
+
+function roleDelete(){
+    connection.query('select title, id from role', function (err, res){
+        const roleList = res.map(choice => ({name: choice.title, value: choice.id}))
+        inquirer.prompt({
+            name: 'deleteRole',
+            type:'list',
+            message: 'What role is going to be removed?',
+            choices: roleList
+        }).then(function(answer){
+            const deleteRoll = roleList.filter(rol => rol.value === answer.deleteRole);
+            console.log(deleteRoll);
+            var query = `delete from role where id = '${answer.deleteRole}'`;
+            connection.query(query, function(err, res){
+                if(err) throw err;
+                console.log(`${deleteRoll[0].name} has been removed to the Role Table.`)
+                startFunction();
+            }) 
+        })
+    })
+}
+
+function employeeAdd(){
+    connection.query('SELECT CONCAT(first_name, " ", last_name) as Manager, id FROM employee', function(err, res){
+        connection.query('SELECT DISTINCT title, id from role', function (err, response){
+        inquirer.prompt([{
+            name: 'employeeFirst',
+            type: 'input',
+            message: 'What is the first name of the new employee?'
+        },{
+            name: 'employeeLast',
+            type: 'input',
+            message: 'What is the last name of the new employee?'
+        },{
+            message: "What is the employee's role?",
+            type: 'list',
+            name: 'employeeRole',
+            choices: response.map(choice => ({name: choice.title, value: choice.id})),
+        },{
+            message: "Who will be the employee's manager?",
+            type: 'list',
+            name: 'employeeManager',
+            choices: res.map(man => ({name: man.Manager , value: man.id})),
+            
+        }]).then(function(answer){
+            connection.query(`insert into employee (first_name, last_name, role_id, manager_id) values ('${answer.employeeFirst}', '${answer.employeeLast}', ${answer.employeeRole}), ${answer.employeeManager}`, function (err, res){
+                if(err) throw err;
+            console.log(`${answer.employeeFirst} ${answer.employeeLast} has been added to the team!`);
+            startFunction();
+        })
+    })
+    })})
+    
 }
