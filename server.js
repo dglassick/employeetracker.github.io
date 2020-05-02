@@ -12,7 +12,8 @@ var connection = mysql.createConnection({
 
     // Your password
     password: "12345678",
-    database: "tracker_db"
+    database: "tracker_db",
+    multipleStatements:true
     
 });
 
@@ -39,7 +40,9 @@ function startFunction(){
             'Add Role',
             'Delete Role',
             'Add Employee',
-            'Delete Employee'
+            'Delete Employee',
+            'Update Employee',
+
 
         ]
     }).then(function(answer){
@@ -66,6 +69,8 @@ function startFunction(){
             employeeAdd();
         }else if (answer.choice === 'Delete Employee'){
             employeeDelete();
+        }else if (answer.choice === 'Update Employee'){
+            employeeUpdate();
         }
     })
 }
@@ -241,8 +246,10 @@ function roleDelete(){
 }
 
 function employeeAdd(){
-    connection.query('SELECT CONCAT(first_name, " ", last_name) as Manager, id FROM employee', function(err, res){
-        connection.query('SELECT DISTINCT title, id from role', function (err, response){
+
+        connection.query('SELECT CONCAT(first_name, " ", last_name) as Manager, id FROM employee; SELECT DISTINCT title, id from role',  [0, 1], function (err, res){
+            console.log(res[0], 'array zero')
+            console.log(res[1], 'array one')
         inquirer.prompt([{
             name: 'employeeFirst',
             type: 'input',
@@ -255,12 +262,12 @@ function employeeAdd(){
             message: "What is the employee's role?",
             type: 'list',
             name: 'employeeRole',
-            choices: response.map(choice => ({name: choice.title, value: choice.id})),
+            choices: res[1].map(choice => ({name: choice.title, value: choice.id})),
         },{
             message: "Who will be the employee's manager?",
             type: 'list',
             name: 'employeeManager',
-            choices: res.map(man => ({name: man.Manager , value: man.id})),
+            choices: res[0].map(man => ({name: man.Manager , value: man.id})),
             
         }]).then(function(answer){
             connection.query(`insert into employee (first_name, last_name, role_id, manager_id) values ('${answer.employeeFirst}', '${answer.employeeLast}', ${answer.employeeRole}), ${answer.employeeManager}`, function (err, res){
@@ -269,6 +276,43 @@ function employeeAdd(){
             startFunction();
         })
     })
-    })})
+    })
     
+}
+
+
+function employeeDelete(){
+    connection.query('select concat(first_name, " ", last_name) as Employee, id from employee', function (err, res){
+        const employeeList = res.map(choice => ({name: choice.Employee, value: choice.id}))
+        inquirer.prompt({
+            name: 'deleteEmployee',
+            type:'list',
+            message: 'Who is going to be removed?',
+            choices: employeeList
+        }).then(function(answer){
+            const deleteEmp = roleList.filter(rol => rol.value === answer.deleteRole);
+            console.log(deleteEmp);
+            var query = `delete from role where id = '${answer.deleteRole}'`;
+            connection.query(query, function(err, res){
+                if(err) throw err;
+                console.log(`${deleteEmp[0].name} has been removed to the Role Table.`)
+                startFunction();
+            }) 
+        })
+    })
+}
+
+function employeeUpdate(){
+    connection.query('SELECT concat(first_name, " ", last_name) as EmpName, id FROM employee; SELECT title, id FROM role', [0,1], function(err, res){
+        console.log(res[0], 'first call')
+        console.log(res[1], 'second call')
+        inquirer.prompt([{
+            name:'employeeToUpdate',
+            type: 'list',
+            message: "Who's role would you like to update?",
+            choices: res[0].map(emp => ({name: emp.EmpName, value: emp.id}))
+        }]).then(answer =>{
+            console.log(answer)
+        })
+    })
 }
