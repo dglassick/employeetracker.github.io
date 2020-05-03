@@ -25,6 +25,7 @@ connection.connect(function (err) {
 });
 
 function startFunction() {
+
     inquirer.prompt({
         name: 'choice',
         type: 'rawlist',
@@ -89,7 +90,7 @@ function viewAllEmployee() {
 };
 
 function viewByDepartment() {
-    connection.query('SELECT * FROM department', function (req, res) {
+    connection.query('select * FROM department', function (req, res) {
         inquirer.prompt({
             name: 'department',
             type: 'list',
@@ -206,7 +207,7 @@ function departmentDelete() {
 }
 
 function roleAdd() {
-    connection.query('SELECT * FROM department', function (req, res) {
+    connection.query('select * FROM department', function (req, res) {
         inquirer.prompt([{
             name: 'roleAdd',
             type: 'input',
@@ -260,7 +261,7 @@ function roleDelete() {
 
 function employeeAdd() {
 
-    connection.query('SELECT CONCAT(first_name, " ", last_name) as Manager, id FROM employee; SELECT DISTINCT title, id from role', [0, 1], function (err, res) {
+    connection.query('select concat(first_name, " ", last_name) as Manager, id FROM employee; select distinct title, id from role', [0, 1], function (err, res) {
         console.log(res[0], 'array zero')
         console.log(res[1], 'array one')
         inquirer.prompt([{
@@ -325,7 +326,7 @@ function employeeDelete() {
 }
 
 function employeeUpdate() {
-    connection.query('SELECT concat(first_name, " ", last_name) as EmpName, id FROM employee; SELECT title, id FROM role', [0, 1], function (err, res) {
+    connection.query('select concat(first_name, " ", last_name) as EmpName, id FROM employee; select title, id FROM role', [0, 1], function (err, res) {
         console.log(res[0], 'first call')
         console.log(res[1], 'second call')
         const updateList = res[0].map(emp => ({
@@ -366,7 +367,7 @@ function employeeUpdate() {
 
 
 function viewBudget() {
-    connection.query(`SELECT department.id, department.name, sum(role.salary) as Budget FROM employee
+    connection.query(`select department.id, department.name, sum(role.salary) as Budget from employee
             left join role on employee.role_id = role.id
             left join department on role.department_id = department.id
             group by department.id, department.name;`, function (err, res) {
